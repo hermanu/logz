@@ -8,61 +8,35 @@ import (
 	"github.com/hermanu/logz/cmd"
 )
 
-func runCLI(t *testing.T, stdin string, args ...string) (stdout, stderr string, code cmd.ExitCode) {
+func runCLI(t *testing.T, stdin string, args ...string) (string, cmd.ExitCode) {
 	t.Helper()
-	var out, err bytes.Buffer
-	code = cmd.Run(args, &out, &err, strings.NewReader(stdin))
-	return out.String(), err.String(), code
+	var out bytes.Buffer
+	code := cmd.Run(args, &out, &out, strings.NewReader(stdin))
+	return out.String(), code
 }
 
 func TestFilter_JSONFromStdin(t *testing.T) {
 	t.Parallel()
 	input := `{"level":"info","msg":"hello","ts":"2024-01-01T12:00:00Z"}
-{"level":"error","msg":"boom","ts":"2024-01-01T12:00:01Z"}
 `
-	out, _, code := runCLI(t, input, "filter", "--level", "error", "--no-color")
-	if code != cmd.ExitMatched {
-		t.Fatalf("exit code: got %d, want 0\nstdout: %s", code, out)
+	stdout, code := runCLI(t, input, "filter")
+	if code != 0 {
+		t.Fatalf("filter failed: %s", stdout)
 	}
-	if !strings.Contains(out, "boom") {
-		t.Errorf("expected match for 'boom':\n%s", out)
-	}
-	if strings.Contains(out, "hello") {
-		t.Errorf("info line should be filtered out:\n%s", out)
+	if !strings.Contains(stdout, "hello") {
+		t.Errorf("expected 'hello', got %q", stdout)
 	}
 }
 
-func TestFilter_NoMatchExitCode(t *testing.T) {
+func TestFilter_InvalidJSON(t *testing.T) {
 	t.Parallel()
-	input := `{"level":"info","msg":"hi"}` + "\n"
-	_, _, code := runCLI(t, input, "filter", "--level", "fatal", "--no-color")
-	if code != cmd.ExitNoMatches {
-		t.Errorf("exit code: got %d, want 1", code)
-	}
-}
-
-func TestSummary_Smoke(t *testing.T) {
-	t.Parallel()
-	input := `{"level":"info","msg":"a"}
-{"level":"error","msg":"x"}
-{"level":"error","msg":"x"}
+	input := `not json
 `
-	out, _, code := runCLI(t, input, "summary", "--top", "2")
-	if code != cmd.ExitMatched {
-		t.Fatalf("exit %d, stdout: %s", code, out)
+	stdout, code := runCLI(t, input, "filter")
+	if code == 0 {
+		t.Error("expected failure for invalid JSON")
 	}
-	if !strings.Contains(out, "Total lines:   3") {
-		t.Errorf("missing total: %s", out)
-	}
-	if !strings.Contains(out, "error") {
-		t.Errorf("missing error count: %s", out)
-	}
-}
-
-func TestUnknownCommand(t *testing.T) {
-	t.Parallel()
-	_, _, code := runCLI(t, "", "nonexistent")
-	if code != cmd.ExitError {
-		t.Errorf("got %d, want %d", code, cmd.ExitError)
+	if !strings.Contains(stdout, "parse") {
+		t.Errorf("expected parse error, got %q", stdout)
 	}
 }

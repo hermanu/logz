@@ -30,6 +30,8 @@ const (
 // String returns the canonical lowercase name for the level.
 func (l Level) String() string {
 	switch l {
+	case LevelUnknown:
+		return "unknown"
 	case LevelTrace:
 		return "trace"
 	case LevelDebug:
@@ -42,9 +44,8 @@ func (l Level) String() string {
 		return "error"
 	case LevelFatal:
 		return "fatal"
-	default:
-		return "unknown"
 	}
+	return "unknown"
 }
 
 // ParseLevel maps a string (case-insensitive) to a [Level].
