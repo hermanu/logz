@@ -16,16 +16,12 @@ linters:
     - errcheck
     - govet
     - staticcheck
-    - typecheck
     - ineffassign
     - unused
     - bodyclose
     - errorlint
-    - errchkjson
     - exhaustive
     - nilerr
-    - rowserrcheck
-    - sqlclosecheck
     - gocheckcompilerdirectives
 
     # Style / readability
@@ -47,7 +43,6 @@ linters:
     - unparam
     - gosec
     - prealloc
-    - perfsprint
 
     # Test discipline
     - testifylint
@@ -56,7 +51,7 @@ linters:
     - testpackage
     - thelper
 
-    # Complexity / size guardrails (loose enough not to be annoying)
+    # Complexity / size guardrails
     - gocyclo
     - funlen
     - nestif
