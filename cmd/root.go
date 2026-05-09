@@ -84,7 +84,7 @@ func Run(args []string, stdout, stderr io.Writer, stdin io.Reader) ExitCode {
 	case errors.Is(err, errNoMatches):
 		return ExitNoMatches
 	default:
-		fmt.Fprintf(stderr, "logz: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "logz: %v\n", err)
 		return ExitError
 	}
 }

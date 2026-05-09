@@ -188,7 +188,7 @@ func runFilterPipeline(
 		return matched, fmt.Errorf("read %s: %w", src.name, streamErr)
 	}
 	if skipped > 0 {
-		fmt.Fprintf(stderr, "logz: %d unparseable line(s) skipped in %s\n", skipped, src.name)
+		_, _ = fmt.Fprintf(stderr, "logz: %d unparseable line(s) skipped in %s\n", skipped, src.name)
 	}
 	return matched, nil
 }

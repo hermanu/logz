@@ -20,7 +20,7 @@ func resolveSources(paths []string, stdin io.Reader) ([]namedSource, error) {
 	}
 	sources := make([]namedSource, 0, len(paths))
 	for _, p := range paths {
-		f, err := os.Open(p)
+		f, err := os.Open(p) //nolint:gosec // G304 is expected for log file handling
 		if err != nil {
 			return nil, fmt.Errorf("open %s: %w", p, err)
 		}
