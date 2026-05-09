@@ -62,7 +62,7 @@ release TAG:
 		echo "Error: tag must be in format vX.Y.Z (e.g., v0.1.0)"
 		exit 1
 	fi
-	git tag -s "{{ TAG }}" -m "{{ TAG }}"
+	git tag -a "{{ TAG }}" -m "{{ TAG }}"
 	git push origin "{{ TAG }}"
 	echo "Pushed {{ TAG }} - release workflow will run shortly"
 
