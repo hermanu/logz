@@ -1,5 +1,6 @@
 # golangci-lint configuration
 linters:
+  default: fast
   enable:
     - errcheck
     - govet
@@ -22,3 +23,22 @@ linters:
     - prealloc
     - testifylint
     - paralleltest
+  settings:
+    govet:
+      enable-all: true
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - performance
+        - style
+    exhaustive:
+      default-signifies-exhaustive: true
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+
+run:
+  timeout: 5m
+  tests: true
