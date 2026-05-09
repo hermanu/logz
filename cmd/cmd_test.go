@@ -32,11 +32,8 @@ func TestFilter_InvalidJSON(t *testing.T) {
 	t.Parallel()
 	input := `not json
 `
-	stdout, code := runCLI(t, input, "filter")
-	if code == 0 {
-		t.Error("expected failure for invalid JSON")
-	}
-	if !strings.Contains(stdout, "parse") {
-		t.Errorf("expected parse error, got %q", stdout)
+	_, code := runCLI(t, input, "filter")
+	if code != 0 {
+		t.Errorf("expected success (skip invalid lines), got exit code %d", code)
 	}
 }
