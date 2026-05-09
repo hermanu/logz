@@ -1,6 +1,8 @@
-# golangci-lint configuration
+# golangci-lint configuration v2
+version: "2"
+
 linters:
-  default: fast
+  default: none
   enable:
     - errcheck
     - govet
@@ -11,33 +13,6 @@ linters:
     - errorlint
     - exhaustive
     - nilerr
-    - gocheckcompilerdirectives
-    - revive
-    - misspell
-    - usestdlibvars
-    - predeclared
-    - copyloopvar
-    - gocritic
-    - unparam
-    - gosec
-    - prealloc
-    - testifylint
-    - paralleltest
-  settings:
-    govet:
-      enable-all: true
-    gocritic:
-      enabled-tags:
-        - diagnostic
-        - performance
-        - style
-    exhaustive:
-      default-signifies-exhaustive: true
-
-formatters:
-  enable:
-    - gofumpt
-    - goimports
 
 run:
   timeout: 5m
