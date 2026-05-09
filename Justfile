@@ -15,8 +15,8 @@ test:
 # Generate coverage report
 cover:
 	mkdir -p _coverage
-	go test -race -count=1 -covermode=atomic -coverprofile=_coverage/coverage.txt ./...
-	go tool cover -html=_coverage/coverage.txt -o _coverage/coverage.html
+	go test -race -count=1 -covermode=atomic -coverprofile=_coverage/out ./...
+	go tool cover -html=_coverage/out -o _coverage/coverage.html
 	echo "Coverage report: _coverage/coverage.html"
 
 # Run go vet
