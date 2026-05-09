@@ -14,10 +14,10 @@ test:
 
 # Generate coverage report
 cover:
-	mkdir -p coverage
-	go test -race -count=1 -covermode=atomic -coverprofile=./coverage/coverage.txt ./...
-	go tool cover -html=./coverage/coverage.txt -o ./coverage/coverage.html
-	echo "Coverage report: ./coverage/coverage.html"
+	mkdir -p _coverage
+	go test -race -count=1 -covermode=atomic -coverprofile=_coverage/out ./...
+	go tool cover -html=_coverage/out -o _coverage/coverage.html
+	echo "Coverage report: _coverage/coverage.html"
 
 # Run go vet
 vet:
@@ -37,9 +37,9 @@ check: vet lint test
 
 # Install development tools
 tools:
-	GOBIN=$(pwd)/bin go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.62.2
+	GOBIN=$(pwd)/bin go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
 	GOBIN=$(pwd)/bin go install mvdan.cc/gofumpt@v0.7.0
-	GOBIN=$(pwd)/bin go install github.com/goreleaser/goreleaser/v2@v2.5.1
+	GOBIN=$(pwd)/bin go install github.com/goreleaser/goreleaser/v2@v2.15.4
 
 # Tidy go.mod
 tidy:
@@ -47,11 +47,24 @@ tidy:
 
 # Clean build artifacts
 clean:
-	rm -rf logz dist coverage bin
+	rm -rf logz dist _coverage bin
 
 # Build snapshot release locally
 snapshot:
 	bin/goreleaser build --snapshot --clean --single-target
+
+# Create and push a release tag (e.g., just release v0.1.0 or v0.1.0-rc1)
+release TAG:
+	#!/usr/bin/env bash
+	set -euo pipefail
+	tag="{{ TAG }}"
+	if [[ ! "{{ TAG }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+[0-9]+)?$ ]]; then
+		echo "Error: tag must be in format vX.Y.Z or vX.Y.Z-rcN (e.g., v0.1.0, v0.1.0-rc1)"
+		exit 1
+	fi
+	git tag -a "{{ TAG }}" -m "{{ TAG }}"
+	git push origin "{{ TAG }}"
+	echo "Pushed {{ TAG }} - release workflow will run shortly"
 
 # Help
 help:
