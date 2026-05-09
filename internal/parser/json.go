@@ -3,6 +3,7 @@ package parser
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -98,9 +99,9 @@ func stringify(v any) string {
 	case float64:
 		// JSON numbers are float64 by default; trim ".0" for integers.
 		if t == float64(int64(t)) {
-			return fmt.Sprintf("%d", int64(t))
+			return strconv.FormatInt(int64(t), 10)
 		}
-		return fmt.Sprintf("%g", t)
+		return strconv.FormatFloat(t, 'g', -1, 64)
 	default:
 		b, err := json.Marshal(t)
 		if err != nil {

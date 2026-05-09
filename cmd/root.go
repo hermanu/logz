@@ -36,8 +36,6 @@ type globalFlags struct {
 	cfgPath string
 }
 
-const globalsKey = "logz.globals"
-
 // New builds the root command. stdout/stderr/stdin are injected for
 // testability — the entrypoint passes the real os.* values.
 func New(stdout, stderr io.Writer, stdin io.Reader) *cobra.Command {

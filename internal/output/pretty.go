@@ -21,22 +21,28 @@ type PrettyWriter struct {
 }
 
 // NewPretty constructs a PrettyWriter. If noColor is true, all colors are
-// disabled regardless of TTY detection.
+// disabled regardless of TTY detection. Colors are configured per-instance
+// (no mutation of fatih/color's package-level state), so concurrent writers
+// in tests don't race.
 func NewPretty(w io.Writer, noColor bool) *PrettyWriter {
-	if noColor {
-		color.NoColor = true
+	mk := func(attrs ...color.Attribute) *color.Color {
+		c := color.New(attrs...)
+		if noColor {
+			c.DisableColor()
+		}
+		return c
 	}
 	return &PrettyWriter{
 		w:       w,
 		noColor: noColor,
-		dim:     color.New(color.Faint),
+		dim:     mk(color.Faint),
 		colors: map[parser.Level]*color.Color{
-			parser.LevelTrace: color.New(color.FgHiBlack),
-			parser.LevelDebug: color.New(color.FgBlue),
-			parser.LevelInfo:  color.New(color.FgGreen),
-			parser.LevelWarn:  color.New(color.FgYellow),
-			parser.LevelError: color.New(color.FgRed),
-			parser.LevelFatal: color.New(color.FgRed, color.Bold),
+			parser.LevelTrace: mk(color.FgHiBlack),
+			parser.LevelDebug: mk(color.FgBlue),
+			parser.LevelInfo:  mk(color.FgGreen),
+			parser.LevelWarn:  mk(color.FgYellow),
+			parser.LevelError: mk(color.FgRed),
+			parser.LevelFatal: mk(color.FgRed, color.Bold),
 		},
 		// Fields already rendered as separate columns shouldn't appear twice.
 		hideKeys: map[string]struct{}{

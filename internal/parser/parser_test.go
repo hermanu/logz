@@ -47,10 +47,10 @@ func TestDetect(t *testing.T) {
 		sample   string
 		wantName string
 	}{
-		"json":         {`{"level":"info","msg":"hi"}`, "json"},
-		"text":         {`2024-01-01 12:00:00 INFO hello`, "text"},
+		"json":          {`{"level":"info","msg":"hi"}`, "json"},
+		"text":          {`2024-01-01 12:00:00 INFO hello`, "text"},
 		"empty_to_text": {``, "text"},
-		"unknown":      {`???`, "text"},
+		"unknown":       {`???`, "text"},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {

@@ -19,11 +19,23 @@ streams files line-by-line (multi-GB safe), and ships as a single static binary.
 ## Install
 
 ```bash
+# Homebrew (macOS / Linux)
+brew install hermanu/tap/logz
+
+# Scoop (Windows)
+scoop bucket add hermanu https://github.com/hermanu/scoop-bucket
+scoop install logz
+
+# Go
 go install github.com/hermanu/logz@latest
+
+# Docker
+docker run --rm -i ghcr.io/hermanu/logz:latest filter --level error < app.log
 ```
 
-Pre-built binaries for Linux, macOS, and Windows are attached to each
-[release](https://github.com/hermanu/logz/releases).
+Pre-built binaries (with checksums and SBOMs) plus `.deb` / `.rpm` / `.apk`
+packages are attached to each [release](https://github.com/hermanu/logz/releases).
+Full installation guide: [docs/install.md](docs/install.md).
 
 ## Quick start
 
@@ -57,8 +69,12 @@ See [docs/configuration.md](docs/configuration.md) for the full reference.
 
 ## Documentation
 
-- [Configuration reference](docs/configuration.md)
+- [Installation](docs/install.md) — every supported install channel
+- [Usage](docs/usage.md) — full command + flag reference
+- [Configuration](docs/configuration.md) — adapt logz to non-standard logs
+- [Cookbook](docs/cookbook.md) — recipes for common tasks
 - [Contributing](CONTRIBUTING.md)
+- [For AI agents](AGENTS.md) — conventions when an agent edits this repo
 - [Security policy](SECURITY.md)
 - [Changelog](CHANGELOG.md)
 

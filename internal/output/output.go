@@ -31,7 +31,7 @@ func New(mode Mode, w io.Writer, noColor bool) Writer {
 	case ModeJSON:
 		return NewJSON(w)
 	case ModePretty:
-		fallthrough
+		return NewPretty(w, noColor)
 	default:
 		return NewPretty(w, noColor)
 	}

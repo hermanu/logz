@@ -32,7 +32,13 @@ builds:
 
 archives:
   - id: default
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
     format_overrides:
       - goos: windows
         format: zip
@@ -40,6 +46,7 @@ archives:
       - LICENSE
       - README.md
       - CHANGELOG.md
+      - docs/**/*
 
 checksum:
   name_template: "checksums.txt"
@@ -50,6 +57,15 @@ snapshot:
 changelog:
   use: github
   sort: asc
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: Bug fixes
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: Other
+      order: 999
   filters:
     exclude:
       - "^docs:"
@@ -65,6 +81,87 @@ release:
   draft: false
   prerelease: auto
   mode: replace
+  header: |
+    ## logz {{ .Version }}
+
+    See [CHANGELOG.md](https://github.com/hermanu/logz/blob/main/CHANGELOG.md) for the full history.
+
+  footer: |
+    ---
+
+    **Install**
+
+    ```bash
+    # Homebrew
+    brew install hermanu/tap/logz
+
+    # Go
+    go install github.com/hermanu/logz@{{ .Tag }}
+
+    # Docker
+    docker pull ghcr.io/hermanu/logz:{{ .Version }}
+    ```
+
+# Homebrew tap — requires a separate `hermanu/homebrew-tap` repo and a
+# HOMEBREW_TAP_TOKEN secret in this repo (a PAT with repo:write on the tap).
+brews:
+  - name: logz
+    repository:
+      owner: hermanu
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Formula
+    homepage: "https://github.com/hermanu/logz"
+    description: "Fast CLI for parsing, filtering, and summarizing log files"
+    license: MIT
+    test: |
+      system "#{bin}/logz", "--version"
+    install: |
+      bin.install "logz"
+    skip_upload: auto
+
+# Scoop bucket for Windows — requires a separate `hermanu/scoop-bucket` repo
+# and a SCOOP_BUCKET_TOKEN secret.
+scoops:
+  - name: logz
+    repository:
+      owner: hermanu
+      name: scoop-bucket
+      branch: main
+      token: "{{ .Env.SCOOP_BUCKET_TOKEN }}"
+    directory: bucket
+    homepage: "https://github.com/hermanu/logz"
+    description: "Fast CLI for parsing, filtering, and summarizing log files"
+    license: MIT
+    skip_upload: auto
+
+# nfpm: native Linux packages (deb / rpm / apk).
+nfpms:
+  - id: packages
+    package_name: logz
+    vendor: hermanu
+    homepage: "https://github.com/hermanu/logz"
+    maintainer: "hermanu <hermanu@users.noreply.github.com>"
+    description: "Fast CLI for parsing, filtering, and summarizing log files"
+    license: MIT
+    formats:
+      - deb
+      - rpm
+      - apk
+    bindir: /usr/bin
+    section: utils
+    contents:
+      - src: ./LICENSE
+        dst: /usr/share/doc/logz/LICENSE
+      - src: ./README.md
+        dst: /usr/share/doc/logz/README.md
+      - src: ./CHANGELOG.md
+        dst: /usr/share/doc/logz/CHANGELOG.md
+
+# Software Bill of Materials (SBOM) — uploaded alongside the release artifacts.
+sboms:
+  - artifacts: archive
 
 dockers:
   - image_templates:
@@ -76,8 +173,11 @@ dockers:
     dockerfile: Dockerfile
     build_flag_templates:
       - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.title=logz"
+      - "--label=org.opencontainers.image.description=Fast CLI for parsing, filtering, and summarizing log files"
       - "--label=org.opencontainers.image.source=https://github.com/hermanu/logz"
       - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
       - "--label=org.opencontainers.image.licenses=MIT"
   - image_templates:
       - "ghcr.io/hermanu/logz:{{ .Version }}-arm64"
@@ -88,8 +188,11 @@ dockers:
     dockerfile: Dockerfile
     build_flag_templates:
       - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.title=logz"
+      - "--label=org.opencontainers.image.description=Fast CLI for parsing, filtering, and summarizing log files"
       - "--label=org.opencontainers.image.source=https://github.com/hermanu/logz"
       - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
       - "--label=org.opencontainers.image.licenses=MIT"
 
 docker_manifests:

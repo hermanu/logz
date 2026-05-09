@@ -1,39 +1,76 @@
+# Refer to .golangci-lint.yml schema: https://golangci-lint.run/usage/configuration/
 run:
   timeout: 5m
   tests: true
+  modules-download-mode: readonly
+
+output:
+  sort-results: true
 
 linters:
   disable-all: true
   enable:
+    # Correctness
     - errcheck
     - govet
     - staticcheck
-    - revive
-    - gosec
-    - gocritic
-    - misspell
-    - unparam
-    - unused
+    - typecheck
     - ineffassign
-    - gofumpt
-    - goimports
+    - unused
     - bodyclose
     - errorlint
+    - errchkjson
     - exhaustive
-    - copyloopvar
     - nilerr
-    - nolintlint
-    - prealloc
-    - predeclared
-    - testifylint
-    - unconvert
-    - usestdlibvars
+    - rowserrcheck
+    - sqlclosecheck
+    - gocheckcompilerdirectives
+
+    # Style / readability
+    - revive
+    - gofumpt
+    - goimports
+    - gci
+    - misspell
     - whitespace
+    - usestdlibvars
+    - mirror
+    - predeclared
+    - nolintlint
+
+    # Bug-prone patterns
+    - copyloopvar
+    - gocritic
+    - unconvert
+    - unparam
+    - gosec
+    - prealloc
+    - perfsprint
+
+    # Test discipline
+    - testifylint
+    - paralleltest
+    - tparallel
+    - testpackage
+    - thelper
+
+    # Complexity / size guardrails (loose enough not to be annoying)
+    - gocyclo
+    - funlen
+    - nestif
+    - nakedret
+    - interfacebloat
+
+    # Project hygiene
+    - forbidigo
+    - gochecknoinits
+    - goconst
 
 linters-settings:
   govet:
     enable-all: true
     disable:
+      # Doesn't add value relative to its noise on small structs.
       - fieldalignment
   gocritic:
     enabled-tags:
@@ -43,45 +80,102 @@ linters-settings:
     disabled-checks:
       - hugeParam
       - rangeValCopy
+      - paramTypeCombine
   errorlint:
     errorf: true
     asserts: true
     comparison: true
   exhaustive:
     default-signifies-exhaustive: true
+  gocyclo:
+    min-complexity: 15
+  funlen:
+    lines: 120
+    statements: 60
+    ignore-comments: true
+  nestif:
+    min-complexity: 5
+  nakedret:
+    max-func-lines: 0
+  interfacebloat:
+    max: 8
+  goconst:
+    min-len: 4
+    min-occurrences: 4
+  forbidigo:
+    forbid:
+      # Force structured logging; print/println belong only in main/cmd output.
+      - p: ^print(ln)?$
+        msg: "use the configured output writer or fmt.Fprint*"
+      # No t.Skip without context.
+      - p: ^t\.Skip$
+        msg: "use t.Skipf with a reason"
+    exclude-godoc-examples: true
   revive:
+    enable-all-rules: false
     rules:
       - name: blank-imports
       - name: context-as-argument
       - name: context-keys-type
       - name: dot-imports
+      - name: empty-block
       - name: error-return
       - name: error-strings
       - name: error-naming
+      - name: errorf
       - name: exported
       - name: increment-decrement
-      - name: var-naming
-      - name: var-declaration
+      - name: indent-error-flow
       - name: package-comments
       - name: range
       - name: receiver-naming
+      - name: redefines-builtin-id
+      - name: superfluous-else
       - name: time-naming
       - name: unexported-return
-      - name: indent-error-flow
-      - name: errorf
-      - name: empty-block
-      - name: superfluous-else
-      - name: unused-parameter
       - name: unreachable-code
-      - name: redefines-builtin-id
+      - name: unused-parameter
+        arguments:
+          - allowRegex: ^_
+      - name: var-declaration
+      - name: var-naming
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/hermanu/logz)
+    custom-order: true
+  goimports:
+    local-prefixes: github.com/hermanu/logz
+  perfsprint:
+    err-error: false  # don't force .Error() over fmt.Errorf in style cases
 
 issues:
+  exclude-dirs:
+    - vendor
+    - testdata
   exclude-rules:
+    # Tests are allowed to be looser — fixtures, table data, helper packing.
     - path: _test\.go
       linters:
         - gosec
         - gocritic
         - revive
         - unparam
+        - funlen
+        - gocyclo
+        - dupl
+        - goconst
+        - forbidigo
+    # cmd/ talks to stdout/stderr by design; let it use fmt.Fprint* freely.
+    - path: ^cmd/
+      linters:
+        - forbidigo
+    # main.go is allowed to call os.Exit.
+    - path: ^main\.go$
+      linters:
+        - revive
+        - gocritic
   max-issues-per-linter: 0
   max-same-issues: 0
+  fix: false

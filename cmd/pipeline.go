@@ -20,7 +20,7 @@ func resolveSources(paths []string, stdin io.Reader) ([]namedSource, error) {
 	}
 	sources := make([]namedSource, 0, len(paths))
 	for _, p := range paths {
-		f, err := os.Open(p) //nolint:gosec // user-supplied path is intentional
+		f, err := os.Open(p)
 		if err != nil {
 			return nil, fmt.Errorf("open %s: %w", p, err)
 		}
@@ -71,7 +71,7 @@ func streamLines(rc io.Reader, cb func(line string) error) error {
 	br := bufio.NewReaderSize(rc, 64*1024)
 	for {
 		line, err := br.ReadString('\n')
-		if len(line) > 0 {
+		if line != "" {
 			// Strip trailing newline (and CR on Windows).
 			n := len(line)
 			if n > 0 && line[n-1] == '\n' {
