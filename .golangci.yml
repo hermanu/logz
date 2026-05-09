@@ -14,7 +14,6 @@ linters:
     - nilerr
     - gocheckcompilerdirectives
     - revive
-    - goimports
     - misspell
     - usestdlibvars
     - predeclared
