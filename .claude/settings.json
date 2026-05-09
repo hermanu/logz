@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go version*)",
+      "Bash(GOTOOLCHAIN=local /home/manu/projects/logz/bin/golangci-lint *)"
+    ]
+  }
+}

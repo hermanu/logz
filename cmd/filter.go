@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/hermanu/logz/internal/filter"
+	"github.com/hermanu/logz/internal/output"
 	"github.com/hermanu/logz/internal/parser"
 )
 
@@ -141,10 +142,15 @@ func buildFilter(flags *filterFlags) (*filter.Filter, error) {
 }
 
 // runFilterPipeline reads from src, parses, filters, and writes matches.
-// limit ≤ 0 means unlimited.
-func runFilterPipeline(src namedSource, formatOverride string, opts parser.Options, f *filter.Filter, out interface {
-	Write(parser.Entry) error
-}, limit int, stderr io.Writer,
+// A non-positive limit means unlimited.
+func runFilterPipeline(
+	src namedSource,
+	formatOverride string,
+	opts parser.Options,
+	f *filter.Filter,
+	out output.Writer,
+	limit int,
+	stderr io.Writer,
 ) (int, error) {
 	const sniffSize = 16 * 1024
 	sample, body, err := parser.SniffSample(src.rc, sniffSize)

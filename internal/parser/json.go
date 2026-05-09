@@ -33,14 +33,17 @@ func NewJSONParser(opts Options) *JSONParser {
 func (*JSONParser) Name() string { return "json" }
 
 // Parse implements [Parser]. Returns [ErrSkip] for blank lines.
+//
+// On a parse error the returned [Entry] has Raw set to line (verbatim) so
+// callers can surface the offending input in diagnostics.
 func (p *JSONParser) Parse(line string) (Entry, error) {
-	line = strings.TrimSpace(line)
-	if line == "" {
+	trimmed := strings.TrimSpace(line)
+	if trimmed == "" {
 		return Entry{}, ErrSkip
 	}
 
 	var raw map[string]any
-	if err := json.Unmarshal([]byte(line), &raw); err != nil {
+	if err := json.Unmarshal([]byte(trimmed), &raw); err != nil {
 		return Entry{Raw: line}, fmt.Errorf("json: %w", err)
 	}
 
