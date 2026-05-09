@@ -1,0 +1,7 @@
+{"level":"info","msg":"server started","ts":"2024-01-01T12:00:00Z","port":8080}
+{"level":"info","msg":"request received","ts":"2024-01-01T12:00:01Z","service":"api","method":"GET","path":"/healthz"}
+{"level":"warn","msg":"slow query","ts":"2024-01-01T12:00:02Z","service":"api","duration_ms":1200}
+{"level":"error","msg":"timeout connecting to db","ts":"2024-01-01T12:00:03Z","service":"api","retry":3}
+{"level":"error","msg":"timeout connecting to db","ts":"2024-01-01T12:00:04Z","service":"api","retry":4}
+{"level":"info","msg":"request received","ts":"2024-01-01T12:00:05Z","service":"api","method":"POST","path":"/checkout"}
+{"level":"fatal","msg":"unrecoverable: db unreachable","ts":"2024-01-01T12:00:06Z","service":"api"}

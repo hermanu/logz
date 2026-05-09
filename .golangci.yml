@@ -1,0 +1,87 @@
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - revive
+    - gosec
+    - gocritic
+    - misspell
+    - unparam
+    - unused
+    - ineffassign
+    - gofumpt
+    - goimports
+    - bodyclose
+    - errorlint
+    - exhaustive
+    - copyloopvar
+    - nilerr
+    - nolintlint
+    - prealloc
+    - predeclared
+    - testifylint
+    - unconvert
+    - usestdlibvars
+    - whitespace
+
+linters-settings:
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - performance
+      - style
+    disabled-checks:
+      - hugeParam
+      - rangeValCopy
+  errorlint:
+    errorf: true
+    asserts: true
+    comparison: true
+  exhaustive:
+    default-signifies-exhaustive: true
+  revive:
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: increment-decrement
+      - name: var-naming
+      - name: var-declaration
+      - name: package-comments
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: unused-parameter
+      - name: unreachable-code
+      - name: redefines-builtin-id
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
+        - gocritic
+        - revive
+        - unparam
+  max-issues-per-linter: 0
+  max-same-issues: 0

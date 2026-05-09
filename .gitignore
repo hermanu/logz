@@ -1,0 +1,20 @@
+# Binaries
+/logz
+/dist/
+*.exe
+*.test
+*.out
+
+# Coverage
+coverage.out
+coverage.html
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Local tool installs
+/bin/
