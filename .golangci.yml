@@ -80,7 +80,6 @@ linters-settings:
     disabled-checks:
       - hugeParam
       - rangeValCopy
-      - paramTypeCombine
   errorlint:
     errorf: true
     asserts: true

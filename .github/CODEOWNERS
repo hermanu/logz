@@ -1,0 +1,9 @@
+# Code ownership for review routing.
+# Each line: <pattern> <owner...>. Last matching pattern wins.
+
+* @hermanu
+
+# Release pipeline and security policy require explicit acknowledgement.
+/.github/workflows/release.yml @hermanu
+/.goreleaser.yaml               @hermanu
+/SECURITY.md                    @hermanu

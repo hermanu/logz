@@ -1,9 +1,10 @@
 module github.com/hermanu/logz
 
-go 1.26
+go 1.22
 
 require (
 	github.com/fatih/color v1.18.0
+	github.com/google/go-cmp v0.6.0
 	github.com/knadh/koanf/parsers/yaml v0.1.0
 	github.com/knadh/koanf/providers/env v1.0.0
 	github.com/knadh/koanf/providers/file v1.1.2

@@ -41,14 +41,34 @@ type Config struct {
 	Theme string `koanf:"theme"`
 }
 
-// ParserConfig mirrors [parser.Options] in a YAML-friendly shape.
+// ParserConfig mirrors [parser.Options] in a YAML-friendly shape. Each field
+// is optional; an empty slice or zero value falls back to the corresponding
+// built-in default.
 type ParserConfig struct {
-	LevelKeys        []string          `koanf:"level_keys"`
-	MessageKeys      []string          `koanf:"message_keys"`
-	TimestampKeys    []string          `koanf:"timestamp_keys"`
-	TimestampLayouts []string          `koanf:"timestamp_layouts"`
-	LevelAliases     map[string]string `koanf:"level_aliases"`
-	TextPattern      string            `koanf:"text_pattern"`
+	// LevelKeys are the structured-field keys to inspect for log level, in
+	// priority order. The first key present in the entry wins.
+	LevelKeys []string `koanf:"level_keys"`
+
+	// MessageKeys are the structured-field keys to inspect for the human
+	// message, in priority order.
+	MessageKeys []string `koanf:"message_keys"`
+
+	// TimestampKeys are the structured-field keys to inspect for timestamps,
+	// in priority order.
+	TimestampKeys []string `koanf:"timestamp_keys"`
+
+	// TimestampLayouts are extra [time.Parse] layouts to attempt before falling
+	// back to the package's built-in list (RFC3339 et al.).
+	TimestampLayouts []string `koanf:"timestamp_layouts"`
+
+	// LevelAliases maps custom level strings (lowercased) to canonical level
+	// names. Useful for Bunyan-style numeric levels (e.g. "30" → "info").
+	LevelAliases map[string]string `koanf:"level_aliases"`
+
+	// TextPattern is a Go regexp with named capture groups used by the plain
+	// text parser. Recognized group names are "timestamp", "level", and
+	// "message"; any other named group becomes a structured field.
+	TextPattern string `koanf:"text_pattern"`
 }
 
 // Default returns a Config populated with built-in defaults.

@@ -9,11 +9,14 @@ var (
 	date    = "unknown"
 )
 
-// Version returns the semantic version string (e.g. "v1.0.0" or "dev").
+// Version returns the semantic version string set at build time, or "dev"
+// when the binary was not built through the project's release tooling.
 func Version() string { return version }
 
-// Commit returns the short git commit hash this binary was built from.
+// Commit returns the short git commit hash this binary was built from, or
+// "none" when commit information was not injected at build time.
 func Commit() string { return commit }
 
-// Date returns the build date in RFC3339 format.
+// Date returns the build date in RFC3339 format, or "unknown" when the
+// build date was not injected at build time.
 func Date() string { return date }
