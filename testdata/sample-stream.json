@@ -1,0 +1,10 @@
+{"time":"2026-05-09T10:00:00.000Z","level":"INFO","msg":"Starting application"}
+{"time":"2026-05-09T10:00:01.000Z","level":"DEBUG","msg":"Loading configuration from /etc/app/config.yaml"}
+{"time":"2026-05-09T10:00:02.000Z","level":"INFO","msg":"Connected to database on localhost:5432"}
+{"time":"2026-05-09T10:00:03.000Z","level":"DEBUG","msg":"Query executed: SELECT * FROM users WHERE active=true"}
+{"time":"2026-05-09T10:00:04.000Z","level":"WARN","msg":"Connection pool near capacity: 45/50"}
+{"time":"2026-05-09T10:00:05.000Z","level":"ERROR","msg":"Failed to process request: connection refused"}
+{"time":"2026-05-09T10:00:05.000Z","level":"ERROR","msg":"Stack trace: at ProcessRequest(ctx) main.go:142"}
+{"time":"2026-05-09T10:00:06.000Z","level":"INFO","msg":"Request completed in 234ms"}
+{"time":"2026-05-09T10:00:07.000Z","level":"DEBUG","msg":"Cache hit for key: user:12345"}
+{"time":"2026-05-09T10:00:08.000Z","level":"INFO","msg":"Shutting down gracefully..."}

@@ -1,8 +1,17 @@
 package cmd
 
-import "context"
+import (
+	"context"
+	"os"
+
+	"github.com/mattn/go-isatty"
+)
 
 type globalsCtxKey struct{}
+
+type terminalCtx struct {
+	isInteractive bool
+}
 
 func withGlobals(ctx context.Context, g *globalFlags) context.Context {
 	if ctx == nil {
@@ -20,4 +29,12 @@ func getGlobals(ctx context.Context) *globalFlags {
 		return &globalFlags{}
 	}
 	return g
+}
+
+var isTerminal = isTerminalCheck()
+
+func isTerminalCheck() bool {
+	return os.Getenv("LOGZ_NO_INTERACTIVE") == "" &&
+		(os.Getenv("TERM") != "dumb" || os.Getenv("FORCE_INTERACTIVE") != "") &&
+		(isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd()))
 }

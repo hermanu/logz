@@ -67,6 +67,7 @@ func New(stdout, stderr io.Writer, stdin io.Reader) *cobra.Command {
 		newSummaryCmd(),
 		newTailCmd(),
 		newFieldsCmd(),
+		newInteractiveCmd(),
 	)
 	return root
 }

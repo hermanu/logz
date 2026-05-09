@@ -1,0 +1,10 @@
+2026-05-09T10:00:00.000Z INFO Starting application
+2026-05-09T10:00:01.000Z DEBUG Loading configuration from /etc/app/config.yaml
+2026-05-09T10:00:02.000Z INFO Connected to database on localhost:5432
+2026-05-09T10:00:03.000Z DEBUG Query executed: SELECT * FROM users WHERE active=true
+2026-05-09T10:00:04.000Z WARN Connection pool near capacity: 45/50
+2026-05-09T10:00:05.000Z ERROR Failed to process request: connection refused
+2026-05-09T10:00:05.000Z ERROR Stack trace: at ProcessRequest(ctx) main.go:142
+2026-05-09T10:00:06.000Z INFO Request completed in 234ms
+2026-05-09T10:00:07.000Z DEBUG Cache hit for key: user:12345
+2026-05-09T10:00:08.000Z INFO Shutting down gracefully...
