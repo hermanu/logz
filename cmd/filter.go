@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -23,6 +24,29 @@ type filterFlags struct {
 	fields []string
 	limit  int
 	invert bool
+}
+
+const maxRegexComplexity = 50
+
+func compileMatchRegex(pattern string) (*regexp.Regexp, error) {
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, fmt.Errorf("--match: %w", err)
+	}
+	complexity := countRegexComplexity(re.String())
+	if complexity > maxRegexComplexity {
+		return nil, fmt.Errorf("--match: pattern too complex (complexity=%d, max=%d)", complexity, maxRegexComplexity)
+	}
+	return re, nil
+}
+
+func countRegexComplexity(pattern string) int {
+	complexity := 0
+	repeats := [...]string{"+", "*", "?", "{", "[", "]", "(", ")", "|"}
+	for _, r := range repeats {
+		complexity += strings.Count(pattern, r)
+	}
+	return complexity
 }
 
 func newFilterCmd() *cobra.Command {
@@ -76,6 +100,7 @@ func runFilter(cmd *cobra.Command, args []string, flags *filterFlags) error {
 	}
 
 	var matched int
+	var closeErrs []error
 	for _, src := range sources {
 		remaining := 0
 		if flags.limit > 0 {
@@ -85,15 +110,18 @@ func runFilter(cmd *cobra.Command, args []string, flags *filterFlags) error {
 			}
 		}
 		n, err := runFilterPipeline(src, g.format, opts, f, out, remaining, cmd.ErrOrStderr())
-		if closeErr := src.rc.Close(); closeErr != nil && err == nil {
-			err = closeErr
+		if ce := src.rc.Close(); ce != nil {
+			closeErrs = append(closeErrs, ce)
 		}
 		matched += n
-		if err != nil {
-			return err
+		if err != nil && !errors.Is(err, io.EOF) {
+			return errors.Join(append(closeErrs, err)...)
 		}
 	}
 
+	if len(closeErrs) > 0 {
+		return errors.Join(closeErrs...)
+	}
 	if matched == 0 {
 		return errNoMatches
 	}
@@ -122,9 +150,9 @@ func buildFilter(flags *filterFlags) (*filter.Filter, error) {
 	}
 	f.Until = until
 	if flags.match != "" {
-		re, reErr := regexp.Compile(flags.match)
+		re, reErr := compileMatchRegex(flags.match)
 		if reErr != nil {
-			return nil, fmt.Errorf("--match: %w", reErr)
+			return nil, reErr
 		}
 		f.Match = re
 	}
