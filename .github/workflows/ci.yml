@@ -30,12 +30,12 @@ jobs:
       - name: go vet
         run: go vet ./...
       - name: go test
-        run: go test -race -count=1 -covermode=atomic -coverprofile=coverage.out ./...
+        run: go test -race -count=1 -covermode=atomic -coverprofile=coverage.txt ./...
       - name: Upload coverage (Linux only)
         if: matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v4
         with:
-          files: coverage.out
+          files: coverage.txt
           fail_ci_if_error: false
 
   lint:

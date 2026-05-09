@@ -14,8 +14,8 @@ test:
 
 # Generate coverage report
 cover:
-	go test -race -count=1 -covermode=atomic -coverprofile=coverage.out ./...
-	go tool cover -html=coverage.out -o coverage.html
+	go test -race -count=1 -covermode=atomic -coverprofile=coverage.txt ./...
+	go tool cover -html=coverage.txt -o coverage.html
 	echo "Coverage report: coverage.html"
 
 # Run go vet
@@ -46,7 +46,7 @@ tidy:
 
 # Clean build artifacts
 clean:
-	rm -rf logz dist coverage.out coverage.html bin
+	rm -rf logz dist coverage.txt coverage.html bin
 
 # Build snapshot release locally
 snapshot:
