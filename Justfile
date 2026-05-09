@@ -37,9 +37,9 @@ check: vet lint test
 
 # Install development tools
 tools:
-	GOBIN=$(pwd)/bin go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.62.2
+	GOBIN=$(pwd)/bin go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
 	GOBIN=$(pwd)/bin go install mvdan.cc/gofumpt@v0.7.0
-	GOBIN=$(pwd)/bin go install github.com/goreleaser/goreleaser/v2@v2.5.1
+	GOBIN=$(pwd)/bin go install github.com/goreleaser/goreleaser/v2@v2.15.4
 
 # Tidy go.mod
 tidy:
