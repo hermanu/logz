@@ -39,9 +39,6 @@ archives:
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
-    format_overrides:
-      - goos: windows
-        format: zip
     files:
       - LICENSE
       - README.md
@@ -92,51 +89,11 @@ release:
     **Install**
 
     ```bash
-    # Homebrew
-    brew install hermanu/tap/logz
-
     # Go
     go install github.com/hermanu/logz@{{ .Tag }}
-
-    # Docker
-    docker pull ghcr.io/hermanu/logz:{{ .Version }}
     ```
 
-# Homebrew tap — requires a separate `hermanu/homebrew-tap` repo and a
-# HOMEBREW_TAP_TOKEN secret in this repo (a PAT with repo:write on the tap).
-brews:
-  - name: logz
-    repository:
-      owner: hermanu
-      name: homebrew-tap
-      branch: main
-      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    directory: Formula
-    homepage: "https://github.com/hermanu/logz"
-    description: "Fast CLI for parsing, filtering, and summarizing log files"
-    license: MIT
-    test: |
-      system "#{bin}/logz", "--version"
-    install: |
-      bin.install "logz"
-    skip_upload: auto
-
-# Scoop bucket for Windows — requires a separate `hermanu/scoop-bucket` repo
-# and a SCOOP_BUCKET_TOKEN secret.
-scoops:
-  - name: logz
-    repository:
-      owner: hermanu
-      name: scoop-bucket
-      branch: main
-      token: "{{ .Env.SCOOP_BUCKET_TOKEN }}"
-    directory: bucket
-    homepage: "https://github.com/hermanu/logz"
-    description: "Fast CLI for parsing, filtering, and summarizing log files"
-    license: MIT
-    skip_upload: auto
-
-# nfpm: native Linux packages (deb / rpm / apk).
+# Linux packages (deb / rpm / apk)
 nfpms:
   - id: packages
     package_name: logz
@@ -159,48 +116,6 @@ nfpms:
       - src: ./CHANGELOG.md
         dst: /usr/share/doc/logz/CHANGELOG.md
 
-# Software Bill of Materials (SBOM) — uploaded alongside the release artifacts.
+# Software Bill of Materials (SBOM)
 sboms:
   - artifacts: archive
-
-dockers:
-  - image_templates:
-      - "ghcr.io/hermanu/logz:{{ .Version }}-amd64"
-      - "ghcr.io/hermanu/logz:latest-amd64"
-    use: buildx
-    goos: linux
-    goarch: amd64
-    dockerfile: Dockerfile
-    build_flag_templates:
-      - "--platform=linux/amd64"
-      - "--label=org.opencontainers.image.title=logz"
-      - "--label=org.opencontainers.image.description=Fast CLI for parsing, filtering, and summarizing log files"
-      - "--label=org.opencontainers.image.source=https://github.com/hermanu/logz"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.licenses=MIT"
-  - image_templates:
-      - "ghcr.io/hermanu/logz:{{ .Version }}-arm64"
-      - "ghcr.io/hermanu/logz:latest-arm64"
-    use: buildx
-    goos: linux
-    goarch: arm64
-    dockerfile: Dockerfile
-    build_flag_templates:
-      - "--platform=linux/arm64"
-      - "--label=org.opencontainers.image.title=logz"
-      - "--label=org.opencontainers.image.description=Fast CLI for parsing, filtering, and summarizing log files"
-      - "--label=org.opencontainers.image.source=https://github.com/hermanu/logz"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.licenses=MIT"
-
-docker_manifests:
-  - name_template: "ghcr.io/hermanu/logz:{{ .Version }}"
-    image_templates:
-      - "ghcr.io/hermanu/logz:{{ .Version }}-amd64"
-      - "ghcr.io/hermanu/logz:{{ .Version }}-arm64"
-  - name_template: "ghcr.io/hermanu/logz:latest"
-    image_templates:
-      - "ghcr.io/hermanu/logz:latest-amd64"
-      - "ghcr.io/hermanu/logz:latest-arm64"
