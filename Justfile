@@ -53,13 +53,13 @@ clean:
 snapshot:
 	bin/goreleaser build --snapshot --clean --single-target
 
-# Create and push a release tag (e.g., just release v0.1.0)
+# Create and push a release tag (e.g., just release v0.1.0 or v0.1.0-rc1)
 release TAG:
 	#!/usr/bin/env bash
 	set -euo pipefail
 	tag="{{ TAG }}"
-	if [[ ! "{{ TAG }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-		echo "Error: tag must be in format vX.Y.Z (e.g., v0.1.0)"
+	if [[ ! "{{ TAG }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+[0-9]+)?$ ]]; then
+		echo "Error: tag must be in format vX.Y.Z or vX.Y.Z-rcN (e.g., v0.1.0, v0.1.0-rc1)"
 		exit 1
 	fi
 	git tag -a "{{ TAG }}" -m "{{ TAG }}"
