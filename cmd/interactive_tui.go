@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -12,54 +11,47 @@ import (
 	"github.com/hermanu/logz/internal/config"
 	"github.com/hermanu/logz/internal/filter"
 	"github.com/hermanu/logz/internal/parser"
+	"github.com/hermanu/logz/internal/ui"
 	"github.com/spf13/cobra"
 )
 
 func interactiveRun(_ *cobra.Command, args []string) error {
-	m := newInteractiveModel(args)
-	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithReportFocus())
+	sources := args
+	if len(sources) == 0 || (len(sources) == 1 && sources[0] == "-") {
+		sources = []string{"-"}
+	}
+
+	m := interactiveModel{
+		sources: sources,
+		layout:  ui.NewLayoutFromDimensions(100, 30),
+		sidebar: ui.NewSidebar(18),
+		loglist:  ui.NewLogList(50, 24),
+		detail:  ui.NewDetailPane(30, 24),
+	}
+
+	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		return err
 	}
 	return nil
 }
 
-func newInteractiveModel(args []string) interactiveModel {
-	m := interactiveModel{
-		sources: args,
-		filter: filterState{
-			servicesOn: make(map[string]bool),
-		},
-	}
-	if len(m.sources) == 0 || (len(m.sources) == 1 && m.sources[0] == "-") {
-		m.sources = []string{"-"}
-	}
-	return m
-}
-
 type interactiveModel struct {
-	width  int
-	height int
-	ready  bool
 	sources []string
+	width   int
+	height  int
+	ready   bool
+	err     error
+
+	layout  *ui.Layout2
+	sidebar *ui.Sidebar
+	loglist *ui.LogList
+	detail  *ui.DetailPane
 
 	entries []parser.Entry
-	stats  logStats
-	filter filterState
+	stats   logStats
 
-	selected int
-	focus    pane
-
-	err error
-}
-
-type filterState struct {
-	level    string
-	service string
-	window  time.Duration
-
-	services   []string
-	servicesOn map[string]bool
+	showHelp bool
 }
 
 type logStats struct {
@@ -68,17 +60,9 @@ type logStats struct {
 	byLevel map[parser.Level]int
 }
 
-type pane int
-
-const (
-	paneSidebar pane = iota
-	paneList
-	paneDetail
-)
-
 func (m interactiveModel) Init() tea.Cmd {
 	return func() tea.Msg {
-		entries, stats, err := loadLogsSync(m.sources, m.filter)
+		entries, stats, err := loadLogs(m.sources, m.sidebar.Filter)
 		if err != nil {
 			return loadError{err: err}
 		}
@@ -86,24 +70,39 @@ func (m interactiveModel) Init() tea.Cmd {
 	}
 }
 
-func loadLogsSync(sources []string, f filterState) ([]parser.Entry, logStats, error) {
+func loadLogs(sources []string, f *ui.FilterState) ([]parser.Entry, logStats, error) {
 	stats := logStats{
 		byLevel: make(map[parser.Level]int),
 	}
 
-	filt := &filter.Filter{Invert: false}
+	filt := filter.Filter{Invert: false}
 
-	if f.level != "" {
-		if lvl, ok := parser.ParseLevel(f.level); ok {
+	// Level filter
+	if f.Level != "" {
+		if lvl, ok := parser.ParseLevel(f.Level); ok {
 			filt.MinLevel = lvl
 		}
 	}
-	if f.window > 0 {
-		filt.Since = time.Now().Add(-f.window)
+
+	// Window filter
+	windowDur := parseWindow(f.Window)
+	if windowDur > 0 {
+		filt.Since = time.Now().Add(-windowDur)
+	}
+
+	// Service filter
+	if len(f.Services) > 0 {
+		filt.FieldEquals = make(map[string]string)
+		for _, svc := range f.Services {
+			if f.ServiceOn[svc] {
+				filt.FieldEquals["service"] = svc
+				break
+			}
+		}
 	}
 
 	entries := []parser.Entry{}
-	services := []string{}
+	serviceSet := make(map[string]bool)
 
 	for _, src := range sources {
 		r := os.Stdin
@@ -120,43 +119,24 @@ func loadLogsSync(sources []string, f filterState) ([]parser.Entry, logStats, er
 		opts, _ := cfg.ParserOptions()
 		p := parser.NewJSONParser(opts)
 
-		sniffer := bufio.NewReaderSize(r, 16*1024)
-		var lines []string
-		for {
-			line, err := sniffer.ReadString('\n')
-			if err != nil {
-				break
-			}
-			line = strings.TrimSpace(line)
+		scanner := bufio.NewScanner(r)
+		for scanner.Scan() {
+			line := scanner.Text()
 			if line == "" {
 				continue
 			}
-			lines = append(lines, line)
-		}
 
-		// Re-read for parsing
-		if src != "-" {
-			r.Close()
-			r, _ = os.Open(src)
-			defer r.Close()
-		} else {
-			r = os.Stdin
-		}
-
-		for _, line := range lines {
 			entry, err := p.Parse(line)
 			if err != nil {
-				if errors.Is(err, parser.ErrSkip) {
-					continue
-				}
 				continue
 			}
 
-			if entry.Fields != nil {
-				if svc, ok := entry.Fields["service"]; ok {
-					if !contains(services, svc) {
-						services = append(services, svc)
-					}
+			// Auto-detect service
+			if svc, ok := entry.Fields["service"]; ok {
+				if !serviceSet[svc] {
+					serviceSet[svc] = true
+					f.Services = append(f.Services, svc)
+					f.ServiceOn[svc] = false
 				}
 			}
 
@@ -166,10 +146,11 @@ func loadLogsSync(sources []string, f filterState) ([]parser.Entry, logStats, er
 			stats.byLevel[entry.Level]++
 			stats.total++
 		}
-		_ = services
 	}
 
 	stats.matches = len(entries)
+
+	// Cap at 100k
 	if len(entries) > 100000 {
 		entries = entries[len(entries)-100000:]
 	}
@@ -177,13 +158,19 @@ func loadLogsSync(sources []string, f filterState) ([]parser.Entry, logStats, er
 	return entries, stats, nil
 }
 
-func contains(slice []string, s string) bool {
-	for _, v := range slice {
-		if v == s {
-			return true
-		}
+func parseWindow(w string) time.Duration {
+	switch w {
+	case "5m":
+		return 5 * time.Minute
+	case "15m":
+		return 15 * time.Minute
+	case "1h":
+		return time.Hour
+	case "24h":
+		return 24 * time.Hour
+	default:
+		return 0
 	}
-	return false
 }
 
 type loadError struct{ err error }
@@ -200,6 +187,11 @@ func (m interactiveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		m.layout = ui.NewLayoutFromDimensions(msg.Width, msg.Height)
+		sw, lw, dw := m.layout.CalcSizes()
+		m.sidebar = ui.NewSidebar(sw)
+		m.loglist = ui.NewLogList(lw, m.height-4)
+		m.detail = ui.NewDetailPane(dw, m.height-4)
 		m.ready = true
 		return m, nil
 
@@ -210,6 +202,24 @@ func (m interactiveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case logsLoaded:
 		m.entries = msg.entries
 		m.stats = msg.stats
+
+		// Update level counts
+		levels := []ui.LevelCount{
+			{Name: "FATAL", Count: msg.stats.byLevel[parser.LevelFatal]},
+			{Name: "ERROR", Count: msg.stats.byLevel[parser.LevelError]},
+			{Name: "WARN", Count: msg.stats.byLevel[parser.LevelWarn]},
+			{Name: "INFO", Count: msg.stats.byLevel[parser.LevelInfo]},
+			{Name: "DEBUG", Count: msg.stats.byLevel[parser.LevelDebug]},
+		}
+		for i := range levels {
+			levels[i].Active = m.sidebar.Filter.Level == levels[i].Name
+		}
+		m.sidebar.LevelCounts = levels
+
+		m.loglist.SetEntries(msg.entries, m.sidebar.Filter)
+		if m.loglist.Selected < len(m.loglist.Entries) {
+			m.detail.SetEntry(&m.loglist.Entries[m.loglist.Selected])
+		}
 		m.ready = true
 		return m, nil
 
@@ -217,68 +227,104 @@ func (m interactiveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
+		case "?":
+			m.showHelp = !m.showHelp
 		case "left":
-			m.focus = pane((int(m.focus) + 2) % 3)
+			m.layout.FocusedPane = (m.layout.FocusedPane + 2) % 3
 		case "right":
-			m.focus = pane((int(m.focus) + 1) % 3)
+			m.layout.FocusedPane = (m.layout.FocusedPane + 1) % 3
 		case "up":
-			if m.selected > 0 {
-				m.selected--
+			if m.layout.FocusedPane == 1 {
+				m.loglist.MoveUp()
+				if m.loglist.Selected < len(m.loglist.Entries) {
+					m.detail.SetEntry(&m.loglist.Entries[m.loglist.Selected])
+				}
 			}
 		case "down":
-			if m.selected < len(m.entries)-1 {
-				m.selected++
+			if m.layout.FocusedPane == 1 {
+				m.loglist.MoveDown()
+				if m.loglist.Selected < len(m.loglist.Entries) {
+					m.detail.SetEntry(&m.loglist.Entries[m.loglist.Selected])
+				}
 			}
+		case "/":
+			m.sidebar.Filter.Level = "ERROR"
+			return m, m.reload()
 		}
 	}
 	return m, nil
 }
 
+func (m *interactiveModel) reload() tea.Cmd {
+	return func() tea.Msg {
+		entries, stats, err := loadLogs(m.sources, m.sidebar.Filter)
+		if err != nil {
+			return loadError{err: err}
+		}
+		return logsLoaded{entries: entries, stats: stats}
+	}
+}
+
 func (m interactiveModel) View() string {
 	if m.err != nil {
-		return "Error: " + m.err.Error()
+		return fmt.Sprintf("Error: %v", m.err)
 	}
 	if !m.ready {
 		return "Loading..."
 	}
 
-	var status string
-	if m.stats.total > 0 {
-		status = fmt.Sprintf("%s lines · %s matches", formatNum(m.stats.total), formatNum(m.stats.matches))
-	} else {
-		status = "No logs. Use: logz interactive <file>"
+	sw, lw, dw := m.layout.CalcSizes()
+	m.sidebar.Width = sw
+	m.loglist.Width = lw
+	m.detail.Width = dw
+
+	sidebarView := m.sidebar.Render()
+	listView := m.loglist.Render()
+	detailView := m.detail.Render()
+
+	status := fmt.Sprintf("%s lines · %s matches · %s window",
+		formatNumber(m.stats.total),
+		formatNumber(m.stats.matches),
+		m.sidebar.Filter.Window)
+
+	hints := "←/→ switch │ ↑/↓ navigate │ / filter │ ? help │ q quit"
+
+	frame := m.layout.Frame(
+		"logz --interactive",
+		sidebarView,
+		listView,
+		detailView,
+		status,
+		hints,
+	)
+
+	if m.showHelp {
+		return frame + "\n\n" + m.renderHelp()
 	}
 
-	lines := []string{
-		"╭────────────────────────────────────────┮",
-		"│ › logz --interactive                 │",
-		"├──────────┬───────────────────────────┤",
-	}
-
-	count := min(15, len(m.entries))
-	for i := 0; i < count; i++ {
-		e := m.entries[i]
-		prefix := " "
-		if i == m.selected {
-			prefix = ">"
-		}
-		msg := e.Message
-		if len(msg) > 35 {
-			msg = msg[:32] + "..."
-		}
-		lines = append(lines, fmt.Sprintf("│%s %-5s │ %s", prefix, e.Level, msg))
-	}
-
-	lines = append(lines, "├──────────┴───────────────────────────┤")
-	lines = append(lines, "│ "+status+" │")
-	lines = append(lines, "╰────────────────────────────────────────┘")
-	lines = append(lines, "")
-	lines = append(lines, "Controls: ←/→ switch panes | ↑/↓ navigate | q quit")
-
-	return strings.Join(lines, "\n")
+	return frame
 }
 
-func formatNum(n int) string {
+func (m interactiveModel) renderHelp() string {
+	help := []string{
+		"╭────────────── HELP ──────────────╮",
+		"│ Key       │ Action               │",
+		"├──────────┼─────────────────────────┤",
+		"│ ←/→      │ Switch pane           │",
+		"│ ↑/↓      │ Navigate list        │",
+		"│ Enter    │ View details        │",
+		"│ /        │ Filter (ERROR)     │",
+		"│ l        │ Toggle level       │",
+		"│ s        │ Toggle service    │",
+		"│ t        │ Cycle time window │",
+		"│ ?        │ Toggle this help │",
+		"│ q        │ Quit              │",
+		"╰──────────┴─────────────────────╯",
+	}
+	return strings.Join(help, "\n")
+}
+
+func formatNumber(n int) string {
 	if n >= 1000000 {
 		return fmt.Sprintf("%.1fM", float64(n)/1000000)
 	}
@@ -286,11 +332,4 @@ func formatNum(n int) string {
 		return fmt.Sprintf("%.1fk", float64(n)/1000)
 	}
 	return fmt.Sprintf("%d", n)
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
