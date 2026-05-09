@@ -53,6 +53,19 @@ clean:
 snapshot:
 	bin/goreleaser build --snapshot --clean --single-target
 
+# Create and push a release tag (e.g., just release v0.1.0)
+release TAG:
+	#!/usr/bin/env bash
+	set -euo pipefail
+	tag="{{ TAG }}"
+	if [[ ! "{{ TAG }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+		echo "Error: tag must be in format vX.Y.Z (e.g., v0.1.0)"
+		exit 1
+	fi
+	git tag -s "{{ TAG }}" -m "{{ TAG }}"
+	git push origin "{{ TAG }}"
+	echo "Pushed {{ TAG }} - release workflow will run shortly"
+
 # Help
 help:
 	just --list
