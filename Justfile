@@ -14,9 +14,10 @@ test:
 
 # Generate coverage report
 cover:
-	go test -race -count=1 -covermode=atomic -coverprofile=coverage.txt ./...
-	go tool cover -html=coverage.txt -o coverage.html
-	echo "Coverage report: coverage.html"
+	mkdir -p coverage
+	go test -race -count=1 -covermode=atomic -coverprofile=./coverage/coverage.txt ./...
+	go tool cover -html=./coverage/coverage.txt -o ./coverage/coverage.html
+	echo "Coverage report: ./coverage/coverage.html"
 
 # Run go vet
 vet:
@@ -46,7 +47,7 @@ tidy:
 
 # Clean build artifacts
 clean:
-	rm -rf logz dist coverage.txt coverage.html bin
+	rm -rf logz dist coverage bin
 
 # Build snapshot release locally
 snapshot:
